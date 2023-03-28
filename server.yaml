@@ -1,0 +1,145 @@
+version: '3.8'
+services:
+    
+    plex-server:
+        container_name: plex
+        network_mode: host
+        hostname: plex
+        environment:
+            - TZ=${TZ}
+            - PUID=${PUID}
+            - PGID=${PGID}
+            - ADVERTISE_IP=127.0.0.1:32400
+        volumes:
+            - ${CONFIG_DIR}/plex/db:/config
+            - ${CONFIG_DIR}/plex/transcode:/transcode
+            - ${MEDIA_DIR}/shows:/shows
+            - ${MEDIA_DIR}/movies:/movies
+            - ${MEDIA_DIR}/music:/music
+        restart: unless-stopped
+        image: linuxserver/plex:latest
+
+    nord-vpn:
+        image: ghcr.io/bubuntux/nordlynx
+        restart: unless-stopped
+        cap_add:
+          - NET_ADMIN               # Required
+          - NET_RAW                 # Required
+        environment:                # Review https://github.com/bubuntux/nordvpn#environment-variables
+          - CONNECT=Country
+          - PRIVATE_KEY=${PRIVATE_KEY}
+          - DNS=8.8.8.8
+          - NETWORK=10.0.0.1/24
+        ports:
+          - 9091:9091
+          - 51413:51413 # Transmission bittorrent daemon
+          - 51413:51413/udp # Transmission bittorrent daemon
+
+    transmission:
+        image: linuxserver/transmission:latest
+        container_name: transmission
+        depends_on:
+          - nord-vpn
+        restart: unless-stopped
+        network_mode: service:nord-vpn # run on the vpn network
+        environment:
+          - TZ=${TZ}
+          - PUID=${PUID}
+          - PGID=${PGID}
+        volumes:
+          - ${MEDIA_DIR}:/media # downloads folder
+          - ${CONFIG_DIR}/transmission:/config # config files
+
+    nzbget:
+      container_name: nzbget
+      image: linuxserver/nzbget:latest
+      restart: unless-stopped
+      network_mode: host
+      environment:
+        - PUID=${PUID} # default user id, defined in .env
+        - PGID=${PGID} # default group id, defined in .env
+        - TZ=${TZ} # timezone, defined in .env
+      volumes:
+        - ${MEDIA_DIR}:/media # download folder
+        - ${CONFIG_DIR}/nzbget:/config # config files
+        - ${QUEUE_DIR}/nzbget:/queue # config files
+      ports:
+        - 6789:6789
+
+    prowlarr:
+        container_name: prowlarr
+        image: linuxserver/prowlarr:nightly
+        restart: unless-stopped
+        network_mode: host
+        environment:
+          - PUID=${PUID} # default user id, defined in .env
+          - PGID=${PGID} # default group id, defined in .env
+          - UMASK=002
+          - TZ=${TZ} # timezone, defined in .env
+        volumes:
+          - /etc/localtime:/etc/localtime:ro
+          - ${CONFIG_DIR}/prowlarr:/config # config files
+          - ${DOWNLOADS_DIR}/torrent-blackhole:/downloads # place where to put .torrent files for manual download
+        ports:
+          - 9696:9696
+
+    bazarr:
+        container_name: bazarr
+        image: linuxserver/bazarr:latest
+        restart: unless-stopped
+        network_mode: host
+        environment:
+          - PUID=${PUID} # default user id, defined in .env
+          - PGID=${PGID} # default group id, defined in .env
+          - TZ=${TZ} # timezone, defined in .env
+        volumes:
+          - ${CONFIG_DIR}/bazarr:/config # config files
+          - ${MEDIA_DIR}:/media # movies folder, same as Radarr
+        ports:
+          - 6767:6767
+
+    sonarr:
+        container_name: sonarr
+        image: linuxserver/sonarr:latest
+        restart: unless-stopped
+        network_mode: host
+        environment:
+          - PUID=${PUID} # default user id, defined in .env
+          - PGID=${PGID} # default group id, defined in .env
+          - TZ=${TZ} # timezone, defined in .env
+        volumes:
+          - /etc/localtime:/etc/localtime:ro
+          - ${CONFIG_DIR}/sonarr:/config # config files
+          - ${MEDIA_DIR}:/media # tv shows folder
+        ports:
+          - 8989:8989
+
+    radarr:
+        container_name: radarr
+        image: linuxserver/radarr:nightly
+        restart: unless-stopped
+        network_mode: host
+        environment:
+          - PUID=${PUID} # default user id, defined in .env
+          - PGID=${PGID} # default group id, defined in .env
+          - TZ=${TZ} # timezone, defined in .env
+        volumes:
+          - /etc/localtime:/etc/localtime:ro
+          - ${CONFIG_DIR}/radarr:/config # config files
+          - ${MEDIA_DIR}:/media # tv shows folder
+        ports:
+          - 7878:7878
+
+    overseerr:
+        image: linuxserver/overseerr:latest
+        network_mode: host
+        container_name: overseerr
+        environment:
+          - PUID=${PUID} # default user id, defined in .env
+          - PGID=${PGID} # default group id, defined in .env
+          - TZ=${TZ} # timezone, defined in .env
+        volumes:
+          - ${CONFIG_DIR}/overseer:/config # config files
+        ports:
+          - 5055:5055
+        restart: unless-stopped
