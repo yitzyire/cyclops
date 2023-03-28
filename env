@@ -1,0 +1,8 @@
+TZ=Europe/location
+PUID=1007
+PGID=1002
+PRIVATE_KEY=this_is_a_top_secret
+CONFIG_DIR=/mnt/data/media_server/config
+DOWNLOADS_DIR=/mnt/mdisk/downloads
+MEDIA_DIR=/mnt/mdisk//media
+QUEUE_DIR=/mnt/queue/media_server/queue
