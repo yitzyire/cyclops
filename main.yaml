@@ -1,0 +1,97 @@
+version: "3"
+services:
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    ports:
+      - 9000:9000
+    volumes:
+      - portainer_data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - PUID=1000
+      - PGID=1000
+    restart: unless-stopped
+
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    container_name: jellyfin
+    ports:
+      - 8096:8096
+      - 8920:8920
+    volumes:
+      - jellyfin_config:/config
+      - qbittorrent_downloads:/data
+      - jellyfin_cache:/cache
+    environment:
+      - PUID=1000
+      - PGID=1000
+    restart: unless-stopped
+
+  gluetun:
+    image: qmcgaw/gluetun
+    container_name: gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      - VPN_SERVICE_PROVIDER=protonvpn
+      - VPN_TYPE=wireguard
+      - WIREGUARD_PRIVATE_KEY=key
+      - SERVER_COUNTRIES=location
+      - DNS=8.8.8.8
+      - NETWORK=192.168.20.0/24
+      - PUID=1000
+      - PGID=1000
+    ports:
+      - 8080:8080
+      - 51414:51414
+      - 51413:51413/udp
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "--silent", "--fail", "http://localhost:8080"]
+      interval: 30s
+      retries: 5
+      start_period: 10s
+      timeout: 10s
+
+  qbittorrent:
+    image: linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    depends_on:
+      - gluetun
+    restart: unless-stopped
+    network_mode: service:gluetun
+    environment:
+      - TZ=Europe/Dublin
+      - PUID=1000
+      - PGID=1000
+      - UMASK=000
+    volumes:
+      - qbittorrent_downloads:/media
+      - qbittorrent_config:/config
+      - qbittorrent_downloads:/downloads
+volumes:
+  portainer_data:
+    driver: local
+  qbittorrent_downloads:
+    driver_opts:
+      type: "nfs"
+      o: "addr=10.0.11.9,rw,nfsvers=4"
+      device: ":/disk0/qbittorrent/downloads"
+  qbittorrent_config:
+    driver_opts:
+      type: "nfs"
+      o: "addr=10.0.11.9,rw,nfsvers=4"
+      device: ":/disk0/qbittorrent/config"
+  jellyfin_config:
+    driver_opts:
+      type: "nfs"
+      o: "addr=10.0.11.9,rw,nfsvers=4"
+      device: ":/disk0/jellyfin/config"
+  jellyfin_cache:
+    driver_opts:
+      type: "nfs"
+      o: "addr=10.0.11.9,rw,nfsvers=4"
+      device: ":/disk0/jellyfin/cache"
