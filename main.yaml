@@ -170,6 +170,7 @@ services:
 
 volumes:
   portainer_data:
+    driver: local  # Optionally define the driver and options
   qbittorrent_downloads:
     driver_opts:
       type: "nfs"
