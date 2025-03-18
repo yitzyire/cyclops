@@ -155,42 +155,42 @@ volumes:
   qbittorrent_downloads:
     driver_opts:
       type: "nfs"
-      o: "addr=10.0.11.9,rw,nfsvers=4"
+      o: "addr=${NFS_SERVER_IP},rw,nfsvers=4"
       device: ":/qbittorrent_downloads"
   qbittorrent_config:
     driver_opts:
       type: "nfs"
-      o: "addr=10.0.11.9,rw,nfsvers=4"
+      o: "addr=${NFS_SERVER_IP},rw,nfsvers=4"
       device: ":/qbittorrent_config"
   jellyfin_config:
     driver_opts:
       type: "nfs"
-      o: "addr=10.0.11.9,rw,nfsvers=4"
+      o: "addr=${NFS_SERVER_IP},rw,nfsvers=4"
       device: ":/jellyfin_config"
   jellyfin_cache:
     driver_opts:
       type: "nfs"
-      o: "addr=10.0.11.9,rw,nfsvers=4"
+      o: "addr=${NFS_SERVER_IP},rw,nfsvers=4"
       device: ":/jellyfin_cache"
   nzbget_config:
     driver_opts:
       type: "nfs"
-      o: "addr=10.0.11.9,rw,nfsvers=4"
+      o: "addr=${NFS_SERVER_IP},rw,nfsvers=4"
       device: ":/nzbget_config"
   nzbget_queue:
     driver_opts:
       type: "nfs"
-      o: "addr=10.0.11.9,rw,nfsvers=4"
+      o: "addr=${NFS_SERVER_IP},rw,nfsvers=4"
       device: ":/nzbget_queue"
   prowlarr_blackhole:
     driver_opts:
       type: "nfs"
-      o: "addr=10.0.11.9,rw,nfsvers=4"
+      o: "addr=${NFS_SERVER_IP},rw,nfsvers=4"
       device: ":/prowlarr_torrent-blackhole"
   jellyseerr_config:
     driver_opts:
       type: "nfs"
-      o: "addr=10.0.11.9,rw,nfsvers=4"
+      o: "addr=${NFS_SERVER_IP},rw,nfsvers=4"
       device: ":/jellyseerr_config"
 
 networks:
