@@ -1,0 +1,200 @@
+version: "3"
+services:
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    volumes:
+      - portainer_data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Dublin
+    restart: unless-stopped
+    networks:
+      - media_net
+    ports:
+      - 9000:9000
+
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    container_name: jellyfin
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Dublin
+    volumes:
+      - jellyfin_config:/config
+      - jellyfin_cache:/cache
+      - qbittorrent_downloads:/media
+    restart: unless-stopped
+    networks:
+      - media_net
+    ports:
+      - 8096:8096
+
+  gluetun:
+    image: qmcgaw/gluetun
+    container_name: gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - UMASK=000
+      - TZ=Europe/Dublin
+      - VPN_SERVICE_PROVIDER=protonvpn
+      - VPN_TYPE=wireguard
+      - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
+      - SERVER_COUNTRIES=Ireland
+      - DNS=8.8.8.8
+      - VPN_DNS=8.8.8.8
+      - FIREWALL_OUTBOUND_SUBNETS=10.0.9.0/24,10.0.11.0/24
+      - VPN_INPUT_PORTS=8080,6789,8989,9696
+    ports:
+      - 8080:8080
+      - 6789:6789
+      - 8989:8989
+      - 9696:9696
+    restart: unless-stopped
+    networks:
+      - vpn_net
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-qO-", "https://1.1.1.1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  qbittorrent:
+    image: linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - UMASK=000
+      - TZ=Europe/Dublin
+    volumes:
+      - qbittorrent_downloads:/media
+      - qbittorrent_config:/config
+    depends_on:
+      gluetun:
+        condition: service_healthy
+    restart: unless-stopped
+    network_mode: "service:gluetun"
+
+  nzbget:
+    image: linuxserver/nzbget:latest
+    container_name: nzbget
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Dublin
+    volumes:
+      - qbittorrent_downloads:/media
+      - nzbget_config:/config
+      - nzbget_queue:/queue
+    depends_on:
+      gluetun:
+        condition: service_healthy
+    restart: unless-stopped
+    network_mode: "service:gluetun"
+
+  prowlarr:
+    image: linuxserver/prowlarr:nightly
+    container_name: prowlarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Dublin
+    volumes:
+      - /home/aman/prowlarr/config:/config
+    depends_on:
+      gluetun:
+        condition: service_healthy
+    restart: unless-stopped
+    network_mode: "service:gluetun"
+
+  sonarr:
+    image: linuxserver/sonarr:latest
+    container_name: sonarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Dublin
+    volumes:
+      - /home/aman/sonarr/config:/config
+      - qbittorrent_downloads:/media
+    depends_on:
+      gluetun:
+        condition: service_healthy
+    restart: unless-stopped
+    network_mode: "service:gluetun"
+
+  jellyseerr:
+    image: fallenbagel/jellyseerr:latest
+    container_name: jellyseerr
+    environment:
+      - JELLYFIN_API_URL=http://jellyfin:8096
+      - JELLYFIN_API_KEY=${JELLYFIN_API_KEY}
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Dublin
+    volumes:
+      - jellyseerr_config:/app/config
+      - qbittorrent_downloads:/media
+    restart: unless-stopped
+    networks:
+      - media_net
+    ports:
+      - 5055:5055
+
+volumes:
+  portainer_data:
+  qbittorrent_downloads:
+    driver_opts:
+      type: "nfs"
+      o: "addr=10.0.11.9,rw,nfsvers=4"
+      device: ":/qbittorrent_downloads"
+  qbittorrent_config:
+    driver_opts:
+      type: "nfs"
+      o: "addr=10.0.11.9,rw,nfsvers=4"
+      device: ":/qbittorrent_config"
+  jellyfin_config:
+    driver_opts:
+      type: "nfs"
+      o: "addr=10.0.11.9,rw,nfsvers=4"
+      device: ":/jellyfin_config"
+  jellyfin_cache:
+    driver_opts:
+      type: "nfs"
+      o: "addr=10.0.11.9,rw,nfsvers=4"
+      device: ":/jellyfin_cache"
+  nzbget_config:
+    driver_opts:
+      type: "nfs"
+      o: "addr=10.0.11.9,rw,nfsvers=4"
+      device: ":/nzbget_config"
+  nzbget_queue:
+    driver_opts:
+      type: "nfs"
+      o: "addr=10.0.11.9,rw,nfsvers=4"
+      device: ":/nzbget_queue"
+  prowlarr_blackhole:
+    driver_opts:
+      type: "nfs"
+      o: "addr=10.0.11.9,rw,nfsvers=4"
+      device: ":/prowlarr_torrent-blackhole"
+  jellyseerr_config:
+    driver_opts:
+      type: "nfs"
+      o: "addr=10.0.11.9,rw,nfsvers=4"
+      device: ":/jellyseerr_config"
+
+networks:
+  media_net:
+    driver: bridge
+  vpn_net:
+    driver: bridge
