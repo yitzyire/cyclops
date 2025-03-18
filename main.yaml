@@ -43,7 +43,6 @@ services:
     environment:
       - PUID=${PUID}
       - PUID=${PGID}
-      - UMASK=000
       - TZ=${TZ}
       - VPN_SERVICE_PROVIDER=protonvpn
       - VPN_TYPE=wireguard
