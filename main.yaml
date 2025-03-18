@@ -73,7 +73,6 @@ services:
     environment:
       - PUID=${PUID}
       - PUID=${PGID}
-      - UMASK=000
       - TZ=${TZ}
     volumes:
       - qbittorrent_downloads:/media
