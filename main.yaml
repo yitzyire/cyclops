@@ -8,7 +8,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - PUID=${PUID}
-      - PUID=${PGID}
+      - PGID=${PUID}
       - TZ=${TZ}
     restart: unless-stopped
     networks:
@@ -21,7 +21,7 @@ services:
     container_name: jellyfin
     environment:
       - PUID=${PUID}
-      - PUID=${PGID}
+      - PGID=${PUID}
       - TZ=${TZ}
     volumes:
       - jellyfin_config:/config
@@ -42,7 +42,7 @@ services:
       - /dev/net/tun:/dev/net/tun
     environment:
       - PUID=${PUID}
-      - PUID=${PGID}
+      - PGID=${PUID}
       - TZ=${TZ}
       - VPN_SERVICE_PROVIDER=protonvpn
       - VPN_TYPE=wireguard
@@ -51,12 +51,13 @@ services:
       - DNS=8.8.8.8
       - VPN_DNS=8.8.8.8
       - FIREWALL_OUTBOUND_SUBNETS=${FIREWALL_OUTBOUND_SUBNETS}
-      - VPN_INPUT_PORTS=8080,6789,8989,9696
+      - VPN_INPUT_PORTS=8080,6789,8989,9696,7878
     ports:
       - 8080:8080
       - 6789:6789
       - 8989:8989
       - 9696:9696
+      - 7878:7878
     restart: unless-stopped
     networks:
       - vpn_net
@@ -71,7 +72,8 @@ services:
     container_name: qbittorrent
     environment:
       - PUID=${PUID}
-      - PUID=${PGID}
+      - PGID=${PUID}
+      - UMASK=000
       - TZ=${TZ}
     volumes:
       - qbittorrent_downloads:/media
@@ -87,7 +89,7 @@ services:
     container_name: nzbget
     environment:
       - PUID=${PUID}
-      - PUID=${PGID}
+      - PGID=${PUID}
       - TZ=${TZ}
     volumes:
       - qbittorrent_downloads:/media
@@ -104,7 +106,7 @@ services:
     container_name: prowlarr
     environment:
       - PUID=${PUID}
-      - PUID=${PGID}
+      - PGID=${PUID}
       - TZ=${TZ}
     volumes:
       - /home/aman/prowlarr/config:/config
@@ -119,7 +121,7 @@ services:
     container_name: sonarr
     environment:
       - PUID=${PUID}
-      - PUID=${PGID}
+      - PGID=${PUID}
       - TZ=${TZ}
     volumes:
       - /home/aman/sonarr/config:/config
@@ -137,7 +139,7 @@ services:
       - JELLYFIN_API_URL=http://jellyfin:8096
       - JELLYFIN_API_KEY=${JELLYFIN_API_KEY}
       - PUID=${PUID}
-      - PUID=${PGID}
+      - PGID=${PUID}
       - TZ=${TZ}
     volumes:
       - jellyseerr_config:/app/config
@@ -147,6 +149,24 @@ services:
       - media_net
     ports:
       - 5055:5055
+
+  radarr:
+    image: linuxserver/radarr:nightly
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /home/aman/prowlarr/config:/config
+      - qbittorrent_downloads:/media
+    depends_on:
+      gluetun:
+        condition: service_healthy
+    restart: unless-stopped
+    network_mode: "service:gluetun"
 
 volumes:
   portainer_data:
