@@ -1,21 +1,5 @@
 version: "3"
 services:
-  portainer:
-    image: portainer/portainer-ce:latest
-    container_name: portainer
-    volumes:
-      - portainer_data:/data
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - PUID=${PUID}
-      - PGID=${PUID}
-      - TZ=${TZ}
-    restart: unless-stopped
-    networks:
-      - media_net
-    ports:
-      - 9000:9000
-
   jellyfin:
     image: jellyfin/jellyfin:latest
     container_name: jellyfin
@@ -26,7 +10,8 @@ services:
     volumes:
       - jellyfin_config:/config
       - jellyfin_cache:/cache
-      - qbittorrent_downloads:/media
+      - movies:/movies
+      - series:/series
     restart: unless-stopped
     networks:
       - media_net
@@ -47,7 +32,9 @@ services:
       - VPN_SERVICE_PROVIDER=protonvpn
       - VPN_TYPE=wireguard
       - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
-      - SERVER_COUNTRIES=Ireland
+      - SERVER_COUNTRIES=Sweden
+      - SERVER_CITIES=Stockholm
+      - SERVER=191
       - DNS=8.8.8.8
       - VPN_DNS=8.8.8.8
       - FIREWALL_OUTBOUND_SUBNETS=${FIREWALL_OUTBOUND_SUBNETS}
@@ -66,7 +53,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-
+  
   qbittorrent:
     image: linuxserver/qbittorrent:latest
     container_name: qbittorrent
@@ -76,8 +63,9 @@ services:
       - UMASK=000
       - TZ=${TZ}
     volumes:
-      - qbittorrent_downloads:/media
       - qbittorrent_config:/config
+      - movies:/movies
+      - series:/series
     depends_on:
       gluetun:
         condition: service_healthy
@@ -92,9 +80,10 @@ services:
       - PGID=${PUID}
       - TZ=${TZ}
     volumes:
-      - qbittorrent_downloads:/media
       - nzbget_config:/config
       - nzbget_queue:/queue
+      - movies:/movies
+      - series:/series
     depends_on:
       gluetun:
         condition: service_healthy
@@ -125,7 +114,8 @@ services:
       - TZ=${TZ}
     volumes:
       - /home/aman/sonarr/config:/config
-      - qbittorrent_downloads:/media
+      - movies:/movies
+      - series:/series
     depends_on:
       gluetun:
         condition: service_healthy
@@ -143,7 +133,8 @@ services:
       - TZ=${TZ}
     volumes:
       - jellyseerr_config:/app/config
-      - qbittorrent_downloads:/media
+      - movies:/movies
+      - series:/series
     restart: unless-stopped
     networks:
       - media_net
@@ -159,8 +150,9 @@ services:
       - TZ=${TZ}
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /home/aman/prowlarr/config:/config
-      - qbittorrent_downloads:/media
+      - /home/aman/radarr/config:/config
+      - movies:/movies
+      - series:/series
     depends_on:
       gluetun:
         condition: service_healthy
@@ -168,13 +160,6 @@ services:
     network_mode: "service:gluetun"
 
 volumes:
-  portainer_data:
-    driver: local
-  qbittorrent_downloads:
-    driver_opts:
-      type: "nfs"
-      o: "addr=${NFS_SERVER_IP},rw,nfsvers=4"
-      device: ":/qbittorrent_downloads"
   qbittorrent_config:
     driver_opts:
       type: "nfs"
@@ -210,6 +195,16 @@ volumes:
       type: "nfs"
       o: "addr=${NFS_SERVER_IP},rw,nfsvers=4"
       device: ":/jellyseerr_config"
+  movies:
+    driver_opts:
+      type: "nfs"
+      o: "addr=${NFS_SERVER_IP},rw,nfsvers=4"
+      device: ":/movies"
+  series:
+    driver_opts:
+      type: "nfs"
+      o: "addr=${NFS_SERVER_IP},rw,nfsvers=4"
+      device: ":/series"
 
 networks:
   media_net:
