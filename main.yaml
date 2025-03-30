@@ -143,6 +143,7 @@ services:
 
   radarr:
     image: linuxserver/radarr:nightly
+    container_name: radarr
     restart: unless-stopped
     environment:
       - PUID=${PUID}
