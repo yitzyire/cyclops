@@ -202,9 +202,3 @@ volumes:
       type: "nfs"
       o: "addr=${NFS_SERVER_IP},rw,nfsvers=4"
       device: ":/series"
-
-networks:
-  media_net:
-    driver: bridge
-  vpn_net:
-    driver: bridge
