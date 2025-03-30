@@ -9,9 +9,27 @@
 # Ports are assigned to the individual containers , they are all dual homed in a sense 
 # Double networks are assigned for port access but routing is defined per host for where to get www traffic 
 
+version: '3.8'
 
+networks:
+  lan_network:
+    driver: macvlan
+    driver_opts:
+      parent: enp1s0
+    ipam:
+      config:
+        - subnet: 192.168.1.0/24
+          gateway: 192.168.1.1
 
-version: "3"
+  vpn_network:
+    driver: macvlan
+    driver_opts:
+      parent: enp2s0
+    ipam:
+      config:
+        - subnet: 10.10.0.0/24
+          gateway: 10.10.0.1
+
 services:
   jellyfin:
     image: jellyfin/jellyfin:latest
@@ -25,48 +43,12 @@ services:
       - jellyfin_cache:/cache
       - movies:/movies
       - series:/series
-    restart: unless-stopped
     networks:
-      - media_net
+      - lan_network
     ports:
       - 8096:8096
-
-  gluetun:
-    image: qmcgaw/gluetun
-    container_name: gluetun
-    cap_add:
-      - NET_ADMIN
-    devices:
-      - /dev/net/tun:/dev/net/tun
-    environment:
-      - PUID=${PUID}
-      - PGID=${PUID}
-      - TZ=${TZ}
-      - VPN_SERVICE_PROVIDER=protonvpn
-      - VPN_TYPE=wireguard
-      - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
-      - SERVER_COUNTRIES=${COUNTRY_LOCATION}
-      - SERVER_CITIES=${COUNTRY_CITY}
-      - SERVER=${COUNTRY_NUMBER}
-      - DNS=8.8.8.8
-      - VPN_DNS=8.8.8.8
-      - FIREWALL_OUTBOUND_SUBNETS=${FIREWALL_OUTBOUND_SUBNETS}
-      - VPN_INPUT_PORTS=8080,6789,8989,9696,7878
-    ports:
-      - 8080:8080
-      - 6789:6789
-      - 8989:8989
-      - 9696:9696
-      - 7878:7878
     restart: unless-stopped
-    networks:
-      - vpn_net
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-qO-", "https://1.1.1.1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-  
+    
   qbittorrent:
     image: linuxserver/qbittorrent:latest
     container_name: qbittorrent
@@ -79,11 +61,11 @@ services:
       - qbittorrent_config:/config
       - movies:/movies
       - series:/series
-    depends_on:
-      gluetun:
-        condition: service_healthy
+    networks:
+      - vpn_network
+    ports:
+      - "8080:8080"     
     restart: unless-stopped
-    network_mode: "service:gluetun"
 
   nzbget:
     image: linuxserver/nzbget:latest
@@ -97,11 +79,12 @@ services:
       - nzbget_queue:/queue
       - movies:/movies
       - series:/series
-    depends_on:
-      gluetun:
-        condition: service_healthy
+    networks:
+      - vpn_network
+    ports:
+      - "6789:6789"   
     restart: unless-stopped
-    network_mode: "service:gluetun"
+
 
   prowlarr:
     image: linuxserver/prowlarr:nightly
@@ -112,11 +95,11 @@ services:
       - TZ=${TZ}
     volumes:
       - /home/aman/prowlarr/config:/config
-    depends_on:
-      gluetun:
-        condition: service_healthy
+    networks:
+      - vpn_network
+    ports:
+      - "9696:9696"   
     restart: unless-stopped
-    network_mode: "service:gluetun"
 
   sonarr:
     image: linuxserver/sonarr:latest
@@ -129,11 +112,11 @@ services:
       - /home/aman/sonarr/config:/config
       - movies:/movies
       - series:/series
-    depends_on:
-      gluetun:
-        condition: service_healthy
+    networks:
+      - vpn_network
+    ports:
+      - "8989:8989"   
     restart: unless-stopped
-    network_mode: "service:gluetun"
 
   jellyseerr:
     image: fallenbagel/jellyseerr:latest
@@ -148,11 +131,11 @@ services:
       - jellyseerr_config:/app/config
       - movies:/movies
       - series:/series
-    restart: unless-stopped
     networks:
-      - media_net
+      - lan_network
     ports:
       - 5055:5055
+    restart: unless-stopped
 
   radarr:
     image: linuxserver/radarr:nightly
@@ -167,11 +150,11 @@ services:
       - /home/aman/radarr/config:/config
       - movies:/movies
       - series:/series
-    depends_on:
-      gluetun:
-        condition: service_healthy
+    networks:
+      - vpn_network
+    ports:
+      - "7878:7878"   
     restart: unless-stopped
-    network_mode: "service:gluetun"
 
 volumes:
   qbittorrent_config:
