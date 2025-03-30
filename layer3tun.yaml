@@ -6,7 +6,7 @@
 # l3 - Routes out of VPN and is inaccessible 
 # 
 # Idea- 
-# Ports are assigned to the invisual containers , they are all dual homed
+# Ports are assigned to the individual containers , they are all dual homed in a sense 
 # Double networks are assigned for port access but routing is defined per host for where to get www traffic 
 
 
