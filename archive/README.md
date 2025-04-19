@@ -69,16 +69,6 @@ Gluetun will restrict outbound traffic to only allowed subnets and expose define
 
 ---
 
-## 🚀 Quick Start
-
-```bash
-git clone https://github.com/yitzyire/archive-stack.git
-cd archive-stack
-cp .env.example .env
-nano .env  # Fill in VPN details and your env vars
-docker compose up --build -d
-```
-
 Then open:
 - `http://localhost:8096` for Jellyfin
 - `http://localhost:5055` for Jellyseerr
