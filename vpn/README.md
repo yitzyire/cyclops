@@ -1,4 +1,4 @@
-# Archive Media Stack 🗂️
+# VPN Media Stack 🗂️
 
 A privacy-conscious, containerized stack for managing media archives with enhanced security. This setup isolates download-capable containers through a VPN layer (Gluetun) while maintaining full access to Jellyfin and Jellyseerr through the local network.
 
