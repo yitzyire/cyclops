@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title></title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <style>
+    body {
+      background-color: #f4f4f4;
+      color: #333;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 2rem;
+    }
+    h1 {
+      text-align: center;
+      color: #555;
+    }
+    .container {
+      background-color: #ffffff;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .container h2 {
+      margin: 0;
+      cursor: pointer;
+      color: #333;
+    }
+    .details {
+      display: none;
+      margin-top: 1rem;
+      background-color: #f9f9f9;
+      border-radius: 6px;
+      padding: 1rem;
+    }
+    .tabs {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    .tab-button {
+      background-color: #e0e0e0;
+      border: 1px solid #aaa;
+      color: #333;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .tab-button.active {
+      background-color: #007bff;
+      color: #fff;
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    #map { height: 300px; border-radius: 4px; }
+    pre {
+      background-color: #eee;
+      color: #222;
+      padding: 1rem;
+      border-radius: 4px;
+      overflow: auto;
+      max-height: 300px;
+      white-space: pre-wrap;
+    }
+    .button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .resources {
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+  <script>
+    async function fetchDetails(container) {
+      const detailEl = document.getElementById(container);
+      const logPre = document.getElementById(container + '-logs');
+      const geoDiv = document.getElementById(container + '-geo');
+      const resDiv = document.getElementById(container + '-resources');
+      const statsDiv = document.getElementById(container + '-stats');
+      const mapId = container + '-map';
+
+      if (detailEl.style.display === 'none') {
+        detailEl.style.display = 'block';
+
+        const [logRes, geoRes, resRes, statsRes] = await Promise.all([
+          fetch(`/api/logs/${container}`),
+          fetch(`/api/geoip/${container}`),
+          fetch(`/api/resources/${container}`),
+          fetch(`/api/stats/${container}`)
+        ]);
+
+        const logs = await logRes.text();
+        const geo = await geoRes.json();
+        const res = await resRes.json();
+        const stats = await statsRes.json();
+
+        logPre.textContent = logs;
+        resDiv.innerHTML = `<div class='resources'>CPU: ${res.cpu}% | Mem: ${res.memory}% | PIDs: ${res.pids} | Uptime: ${res.uptime}</div>`;
+
+        geoDiv.innerHTML = `<div><strong>${geo.city}</strong>, ${geo.country}</div><div id="${mapId}" style="height: 300px; border-radius: 4px;"></div>`;
+        const loc = geo.loc ? geo.loc.split(',') : [0, 0];
+        const map = L.map(mapId).setView(loc, 6);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '© OpenStreetMap'
+        }).addTo(map);
+        L.marker(loc).addTo(map).bindPopup(`${geo.city}, ${geo.country}`).openPopup();
+
+        statsDiv.innerHTML = `
+          <div class='resources'>
+            <strong>Status:</strong> ${stats.status}<br>
+            <strong>Uptime:</strong> ${stats.uptime}<br>
+            <strong>Ports:</strong> ${stats.ports}
+          </div>`;
+      } else {
+        detailEl.style.display = 'none';
+      }
+    }
+
+    function toggleTab(container, tab) {
+      document.querySelectorAll(`#${container} .tab-button`).forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll(`#${container} .tab-content`).forEach(c => c.classList.remove('active'));
+      document.getElementById(`${container}-${tab}-btn`).classList.add('active');
+      document.getElementById(`${container}-${tab}-content`).classList.add('active');
+    }
+  </script>
+</head>
+<body>
+
+  {% for name in containers %}
+  <div class="container">
+    <h2 onclick="fetchDetails('{{name}}')">{{ name }}</h2>
+    <div class="details" id="{{name}}">
+      <div class="tabs">
+        <button id="{{name}}-geo-btn" class="tab-button active" onclick="toggleTab('{{name}}', 'geo')">Geo</button>
+        <button id="{{name}}-logs-btn" class="tab-button" onclick="toggleTab('{{name}}', 'logs')">Logs</button>
+        <button id="{{name}}-resources-btn" class="tab-button" onclick="toggleTab('{{name}}', 'resources')">Resources</button>
+        <button id="{{name}}-stats-btn" class="tab-button" onclick="toggleTab('{{name}}', 'stats')">Stats</button>
+      </div>
+
+      <div class="tab-content active" id="{{name}}-geo-content">
+        <div id="{{name}}-geo">Loading geo...</div>
+      </div>
+      <div class="tab-content" id="{{name}}-logs-content">
+        <pre id="{{name}}-logs">Loading logs...</pre>
+      </div>
+      <div class="tab-content" id="{{name}}-resources-content">
+        <div id="{{name}}-resources">Loading resources...</div>
+      </div>
+      <div class="tab-content" id="{{name}}-stats-content">
+        <div id="{{name}}-stats">Loading stats...</div>
+      </div>
+
+      <form method="POST" action="/api/restart/{{name}}">
+        <button type="submit" class="button">Restart</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+
+  <div class="container">
+    <h2>⚙️ Docker Host (localhost)</h2>
+    <div class="resources">
+      <strong>IP:</strong> {{ host_ip }}<br>
+      <strong>CPU:</strong> {{ host_stats.cpu }}% |
+      <strong>Mem:</strong> {{ host_stats.memory }}% |
+      <strong>Uptime:</strong> {{ host_stats.uptime }} |
+      <strong>PIDs:</strong> {{ host_stats.pids }}
+    </div>
+  </div>
+</body>
+</html>
