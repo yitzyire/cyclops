@@ -1,5 +1,3 @@
-# Dashboard for docker 
-
 from flask import Flask, jsonify, render_template, request
 import subprocess
 import json
