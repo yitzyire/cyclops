@@ -19,7 +19,7 @@ A privacy-conscious, containerized stack for managing media archives with enhanc
 | Service        | Description                               | Port       | Network        |
 |----------------|-------------------------------------------|------------|----------------|
 | Jellyfin       | Local media streaming server              | `8096`     | `media_net`    |
-| Gluetun        | VPN layer (WireGuard)                     | See below  | `vpn_net`      |
+| Gluetun        | VPN layer (WireGuard)                     | -          | `vpn_net`      |
 | qBittorrent    | Torrent client (via Gluetun)              | `8080`     | via `gluetun`  |
 | NZBGet         | Usenet queue (via Gluetun)                | `6789`     | via `gluetun`  |
 | Prowlarr       | Indexer manager (via Gluetun)             | `9696`     | via `gluetun`  |
@@ -37,10 +37,6 @@ archive-stack/
 ├── docker-compose.yml
 ├── .env (required)
 ├── volumes (via NFS)
-└── configs/
-    ├── prowlarr/
-    ├── sonarr/
-    ├── radarr/
 ```
 
 ---
@@ -53,7 +49,7 @@ WIREGUARD_PRIVATE_KEY=...
 COUNTRY_LOCATION=...
 COUNTRY_CITY=...
 COUNTRY_NUMBER=...
-FIREWALL_OUTBOUND_SUBNETS=10.0.0.0/8,172.16.0.0/12
+FIREWALL_OUTBOUND_SUBNETS=
 ```
 
 Gluetun will restrict outbound traffic to only allowed subnets and expose defined ports.
