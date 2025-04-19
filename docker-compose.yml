@@ -108,7 +108,6 @@ services:
   radarr:
     image: linuxserver/radarr:nightly
     container_name: radarr
-    restart: unless-stopped
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -123,6 +122,7 @@ services:
       - media_net
     ports:
       - 7878:7878
+
   ip-checker:
     build:
       context: ./ip-checker
