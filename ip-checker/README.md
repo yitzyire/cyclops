@@ -1,6 +1,6 @@
 # Cyclops 👁️
 
-self-hosted DevOps dashboard for monitoring your Docker containers — complete with real-time logs, container stats, geo-location mapping
+self-hosted dashboard for monitoring your Docker containers — complete with real-time logs, container stats, geo-location mapping
 
 ---
 
