@@ -26,9 +26,6 @@ git clone https://github.com/yitzyire/cyclops.git
 cd cyclops
 ```
 
-### 2. Configure Environment
-(Optional) Create a `.env` file if you're using `PUID`, `PGID`, or other env vars.
-
 ### 3. Start the Stack
 ```bash
 docker compose up --build -d
