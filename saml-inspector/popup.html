@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>SAML Inspector</title>
+  <style>
+    body { font-family: sans-serif; padding: 10px; width: 500px; height: 600px; overflow: auto; }
+
+    #payload {
+      white-space: pre-wrap;
+      background: #f0f0f0;
+      padding: 5px;
+      margin-top: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      max-height: 2.5em; /* Collapsed by default */
+      overflow: hidden;
+      cursor: pointer;
+      transition: max-height 0.3s ease, overflow 0.3s ease;
+    }
+
+    #payload.expanded {
+      max-height: 800px;
+      overflow: auto;
+    }
+
+    li {
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 3px;
+      margin-bottom: 5px;
+      background-color: #e6f7ff;
+      transition: background-color 0.2s;
+    }
+
+    li:hover {
+      background-color: #d0f0ff;
+    }
+
+    button { margin: 10px 5px 20px 0; }
+  </style>
+</head>
+<body>
+  <ul id="payloadList"></ul>
+  <h2>Last SAML Capture</h2>
+  <div id="timestamp">No captures yet.</div>
+  <div id="payload">Waiting for captures...</div>
+  <div id="currentLabel" style="font-size: 0.9em; color: #555; margin-top: 10px;"></div>
+  <button id="copyBtn" style="margin-top: 10px;">Copy Payload</button>
+  <button id="clearBtn">Clear All</button>
+  <button id="prevBtn">Previous</button>
+  <button id="nextBtn">Next</button>
+  <script src="popup.js"></script>
+</body>
+</html>
