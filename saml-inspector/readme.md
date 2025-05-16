@@ -51,8 +51,3 @@ SAML Inspector is a Chrome Extension that captures and decodes SAMLRequest and S
 - Download captured payloads as files
 - Automatic cleanup options (clear older captures)
 
-## Credits
-
-Created by [Your Name or Organization].  
-Designed to simplify SAML debugging and inspection.
-
