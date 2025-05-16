@@ -31,11 +31,11 @@ SAML Inspector is a Chrome Extension that captures and decodes SAMLRequest and S
 4. Browse captured payloads, view their XML, or copy them.
 
 ## File Structure
-.
-├── background.js # Captures SAML data via webRequest API
-├── manifest.json # Chrome extension configuration
-├── popup.html # Popup user interface layout
-└── popup.js # Popup logic and event handling
+
+- `background.js` – Captures SAML data via webRequest API
+- `manifest.json` – Chrome extension configuration
+- `popup.html` – Popup user interface layout
+- `popup.js` – Popup logic and event handling
 
 
 ## Permissions
