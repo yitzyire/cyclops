@@ -1,18 +1,17 @@
-version: "3"
 services:
   jellyfin:
     image: jellyfin/jellyfin:latest
     container_name: jellyfin
+    restart: unless-stopped
     environment:
       - PUID=${PUID}
-      - PGID=${PUID}
+      - PGID=${PGID}
       - TZ=${TZ}
     volumes:
       - jellyfin_config:/config
       - jellyfin_cache:/cache
       - movies:/movies
       - series:/series
-    restart: unless-stopped
     networks:
       - media_net
     ports:
@@ -21,16 +20,16 @@ services:
   qbittorrent:
     image: linuxserver/qbittorrent:latest
     container_name: qbittorrent
+    restart: unless-stopped
     environment:
       - PUID=${PUID}
-      - PGID=${PUID}
+      - PGID=${PGID}
       - UMASK=000
       - TZ=${TZ}
     volumes:
       - qbittorrent_config:/config
       - movies:/movies
       - series:/series
-    restart: unless-stopped
     networks:
       - media_net
     ports:
@@ -39,16 +38,16 @@ services:
   nzbget:
     image: linuxserver/nzbget:latest
     container_name: nzbget
+    restart: unless-stopped
     environment:
       - PUID=${PUID}
-      - PGID=${PUID}
+      - PGID=${PGID}
       - TZ=${TZ}
     volumes:
       - nzbget_config:/config
       - nzbget_queue:/queue
       - movies:/movies
       - series:/series
-    restart: unless-stopped
     networks:
       - media_net
     ports:
@@ -57,13 +56,13 @@ services:
   prowlarr:
     image: linuxserver/prowlarr:nightly
     container_name: prowlarr
+    restart: unless-stopped
     environment:
       - PUID=${PUID}
-      - PGID=${PUID}
+      - PGID=${PGID}
       - TZ=${TZ}
     volumes:
-      - /home/aman/prowlarr/config:/config
-    restart: unless-stopped
+      - ${CONFIG_DIR}/prowlarr/config:/config
     networks:
       - media_net
     ports:
@@ -72,15 +71,15 @@ services:
   sonarr:
     image: linuxserver/sonarr:latest
     container_name: sonarr
+    restart: unless-stopped
     environment:
       - PUID=${PUID}
-      - PGID=${PUID}
+      - PGID=${PGID}
       - TZ=${TZ}
     volumes:
-      - /home/aman/sonarr/config:/config
+      - ${CONFIG_DIR}/sonarr/config:/config
       - movies:/movies
       - series:/series
-    restart: unless-stopped
     networks:
       - media_net
     ports:
@@ -89,17 +88,17 @@ services:
   jellyseerr:
     image: fallenbagel/jellyseerr:latest
     container_name: jellyseerr
+    restart: unless-stopped
     environment:
       - JELLYFIN_API_URL=http://jellyfin:8096
       - JELLYFIN_API_KEY=${JELLYFIN_API_KEY}
       - PUID=${PUID}
-      - PGID=${PUID}
+      - PGID=${PGID}
       - TZ=${TZ}
     volumes:
       - jellyseerr_config:/app/config
       - movies:/movies
       - series:/series
-    restart: unless-stopped
     networks:
       - media_net
     ports:
@@ -108,16 +107,16 @@ services:
   radarr:
     image: linuxserver/radarr:nightly
     container_name: radarr
+    restart: unless-stopped
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /home/aman/radarr/config:/config
+      - ${CONFIG_DIR}/radarr/config:/config
       - movies:/movies
       - series:/series
-    restart: unless-stopped
     networks:
       - media_net
     ports:
@@ -127,13 +126,15 @@ services:
     build:
       context: ./ip-checker
     container_name: ip-checker
+    restart: unless-stopped
     ports:
       - 5000:5000
-    restart: unless-stopped
     networks:
       - media_net
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./ip-checker/templates:/app/templates
+
 volumes:
   qbittorrent_config:
     driver_opts:
@@ -160,11 +161,7 @@ volumes:
       type: "nfs"
       o: "addr=${NFS_SERVER_IP},rw,nfsvers=4"
       device: ":/nzbget_queue"
-  prowlarr_blackhole:
-    driver_opts:
-      type: "nfs"
-      o: "addr=${NFS_SERVER_IP},rw,nfsvers=4"
-      device: ":/prowlarr_torrent-blackhole"
+
   jellyseerr_config:
     driver_opts:
       type: "nfs"
